@@ -1,38 +1,50 @@
 // src/RandomTable.js
 import React, { useState, useEffect } from 'react';
 
-const dummyData = [
-  { date: '2023-11-01', alcohol_type: 'Beer', location: 'Bar A', event_type: 'Happy Hour' },
-  { date: '2023-11-02', alcohol_type: 'Wine', location: 'Restaurant B', event_type: 'Wine Tasting' },
-  { date: '2023-11-03', alcohol_type: 'Whiskey', location: 'Club C', event_type: 'Live Music' },
-  { date: '2023-11-04', alcohol_type: 'Cocktail', location: 'Lounge D', event_type: 'Cocktail Night' },
-  { date: '2023-11-05', alcohol_type: 'Beer', location: 'Bar A', event_type: 'Trivia Night' },
-];
-
 const RandomTable = () => {
-  const [data, setData] = useState(dummyData);
-  const [filteredData, setFilteredData] = useState(dummyData);
+  const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [filters, setFilters] = useState({
     date: '',
     alcohol_type: '',
     location: '',
-    event_type: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [alcoholTypes, setAlcoholTypes] = useState([]);
+  const [locations, setLocations] = useState([]);
+
+  // Fetch data from the API on button click
+  const fetchData = () => {
+    setLoading(true);
+    fetch('http://127.0.0.1:5000/')
+      .then(response => response.json())
+      .then(apiData => {
+        setData(apiData);
+        setFilteredData(apiData);
+        
+        // Extract unique values for dropdowns
+        setAlcoholTypes([...new Set(apiData.map(item => item.MustHave))]);
+        setLocations([...new Set(apiData.map(item => item.Address))]);
+        
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  };
 
   // Apply filters to the data
   const applyFilters = () => {
     let newData = [...data];
     if (filters.date) {
-      newData = newData.filter(item => item.date === filters.date);
+      newData = newData.filter(item => item.PostingDate === filters.date);
     }
     if (filters.alcohol_type) {
-      newData = newData.filter(item => item.alcohol_type.toLowerCase().includes(filters.alcohol_type.toLowerCase()));
+      newData = newData.filter(item => item.MustHave === filters.alcohol_type);
     }
     if (filters.location) {
-      newData = newData.filter(item => item.location.toLowerCase().includes(filters.location.toLowerCase()));
-    }
-    if (filters.event_type) {
-      newData = newData.filter(item => item.event_type.toLowerCase().includes(filters.event_type.toLowerCase()));
+      newData = newData.filter(item => item.Address === filters.location);
     }
     setFilteredData(newData);
   };
@@ -50,6 +62,11 @@ const RandomTable = () => {
     <div>
       <h2>Event Data Table</h2>
 
+      {/* Fetch Data Button */}
+      <button onClick={fetchData} disabled={loading}>
+        {loading ? 'Loading...' : 'Fetch Data'}
+      </button>
+
       {/* Filter Inputs */}
       <div className="filters">
         <input
@@ -58,46 +75,53 @@ const RandomTable = () => {
           value={filters.date}
           onChange={handleFilterChange}
         />
-        <input
-          type="text"
+        
+        {/* Dropdown for Alcohol Type */}
+        <select
           name="alcohol_type"
-          placeholder="Alcohol Type"
           value={filters.alcohol_type}
           onChange={handleFilterChange}
-        />
-        <input
-          type="text"
+        >
+          <option value="">Select Alcohol Type</option>
+          {alcoholTypes.map((type, index) => (
+            <option key={index} value={type}>{type}</option>
+          ))}
+        </select>
+        
+        {/* Dropdown for Location */}
+        <select
           name="location"
-          placeholder="Location"
           value={filters.location}
           onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="event_type"
-          placeholder="Event Type"
-          value={filters.event_type}
-          onChange={handleFilterChange}
-        />
+        >
+          <option value="">Select Location</option>
+          {locations.map((location, index) => (
+            <option key={index} value={location}>{location}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table to showcase filtered data */}
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Alcohol Type</th>
             <th>Location</th>
-            <th>Event Type</th>
+            <th>Link</th>
+            <th>Alcohol Type</th>
+            <th>Page Heading</th>
+            <th>Posting Date</th>
+            <th>Timing</th>
           </tr>
         </thead>
         <tbody>
           {filteredData.map((row, rowIndex) => (
             <tr key={rowIndex}>
-              <td>{row.date}</td>
-              <td>{row.alcohol_type}</td>
-              <td>{row.location}</td>
-              <td>{row.event_type}</td>
+              <td>{row.Address}</td>
+              <td><a href={row.Link} target="_blank" rel="noopener noreferrer">Click here</a></td>
+              <td>{row.MustHave}</td>
+              <td>{row.PageHeading}</td>
+              <td>{row.PostingDate}</td>
+              <td>{row.Timing}</td>
             </tr>
           ))}
         </tbody>
@@ -120,8 +144,20 @@ const RandomTable = () => {
         .filters {
           margin-bottom: 20px;
         }
-        .filters input {
+        .filters input, .filters select {
           margin-right: 10px;
+        }
+        button {
+          margin-bottom: 20px;
+          padding: 10px 20px;
+          background-color: #007BFF;
+          color: white;
+          border: none;
+          cursor: pointer;
+        }
+        button:disabled {
+          background-color: #ccc;
+          cursor: not-allowed;
         }
       `}</style>
     </div>
