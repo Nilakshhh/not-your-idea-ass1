@@ -60,7 +60,7 @@ class WebScraper:
         all_post_url.extend(all_post_url)
 
         results = []
-        for url in all_post_url[:25]:  # Limit to first 11 posts for demonstration
+        for url in all_post_url[:50]:  # Limit to first x posts for demonstration
             self.get_url(url)
             data = self.get_data_json()
             results.append(data)  # Collect data for each post
